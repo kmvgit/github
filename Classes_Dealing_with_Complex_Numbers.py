@@ -2,23 +2,16 @@ import math
 
 class Complex(object):
     def __init__(self, real, imaginary):
-        self.real = real
-        self.imaginary = imaginary
 
     def __add__(self, no):
-        self.real + self.imaginary
 
     def __sub__(self, no):
-        pass
 
     def __mul__(self, no):
-        pass
 
     def __truediv__(self, no):
-        pass
 
     def mod(self):
-        pass
 
     def __str__(self):
         if self.imaginary == 0:
@@ -36,5 +29,8 @@ class Complex(object):
 
 
 if __name__ == '__main__':
-    comp = Complex(2, 1)
-    print(comp)
+    c = map(float, input().split())
+    d = map(float, input().split())
+    x = Complex(*c)
+    y = Complex(*d)
+    print(*map(str, [x + y, x - y, x * y, x / y, x.mod(), y.mod()]), sep='\n')
