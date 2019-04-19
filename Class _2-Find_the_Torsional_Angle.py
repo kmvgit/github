@@ -22,10 +22,7 @@ class Points(object):
 
 if __name__ == '__main__':
     points = list()
-    for i in range(4):
-        a = list(map(float, input().split()))
-        points.append(a)
-
+    [points.append(list(map(float, input().split()))) for i in range(4)]
     a, b, c, d = Points(*points[0]), Points(*points[1]), Points(
         *points[2]), Points(*points[3])
     x = (b - a).cross(c - b)
