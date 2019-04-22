@@ -1,5 +1,5 @@
 def generator(*a):
-    for i in list(range(min(len(x) for x in a))):
+    for i in range(min(len(x) for x in a)):
         yield tuple(x[i] for x in a)
 
 a = [1,2,3,5,8,3,5,9,2,5,7,8]

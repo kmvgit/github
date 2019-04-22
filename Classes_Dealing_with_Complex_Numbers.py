@@ -6,26 +6,20 @@ class Complex(object):
         self.imaginary = imaginary
 
     def __add__(self, no):
-        r = self.real + no.real
-        i = self.imaginary + no.imaginary
-        return f'{"%.2f" % (r)}{"+" if int(i) > 0 else ""}{"%.2f" % (i)}i'
+        return Complex(self.real + no.real,self.imaginary + no.imaginary)
 
     def __sub__(self, no):
-        r = self.real - no.real
-        i = self.imaginary - no.imaginary
-        return f'{"%.2f" % (r)}{"+" if int(i) > 0 else ""}{"%.2f" % (i)}i'
+        return Complex(self.real - no.real, self.imaginary - no.imaginary)
 
     def __mul__(self, no):
-        return f'{"%.2f" % (self.real*no.real - self.imaginary*no.imaginary)}+{"%.2f" % (self.real*no.imaginary + no.real*self.imaginary)}i'
+        return Complex(self.real*no.real - self.imaginary*no.imaginary, self.real*no.imaginary + no.real*self.imaginary)
 
     def __truediv__(self, no):
-        r = round((self.real*no.real + self.imaginary*no.imaginary) /
-               (no.real**2 + no.imaginary**2), 2)
-        i = round((no.real*self.imaginary - self.real*no.imaginary) / (no.real**2 + no.imaginary**2), 2)
-        return f'{r}{"+" if int(i) > 0 else ""}{i}i'
+        return Complex((self.real*no.real + self.imaginary*no.imaginary) / (
+                no.real**2 + no.imaginary**2), (no.real*self.imaginary - self.real*no.imaginary) / (no.real**2 + no.imaginary**2))
 
     def mod(self):
-        return f'{round((self.real**2 + self.imaginary**2) ** 0.5, 2)}+0.00i'
+        return Complex((self.real**2 + self.imaginary**2) ** 0.5, 0)
 
     def __str__(self):
         if self.imaginary == 0:

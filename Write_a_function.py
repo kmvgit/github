@@ -1,12 +1,11 @@
 def is_leap(year):
-    leap = False
-    # Write your logic here
-    if 1900 <= year <= 10 ** 5:
-        if year % 4 == 0:
-            if year % 100 != 0 or year % 400 == 0:
-                leap = True
-    return leap
+    if year % 4 == 0 and year % 100 != 0:
+        return True
+    elif year % 400 == 0 and year % 100 == 0:
+        return True
+    #Наверное здесь не нужен else, на выходе и так будет False, если не
+    # будет захода в блоки if-elif
+    return False
 
 year = int(input())
-
 print(is_leap(year))

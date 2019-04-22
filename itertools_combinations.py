@@ -7,3 +7,6 @@ def perm(a, b):
 
 a, b = input().split(' ')
 perm(a,int(b))
+
+a, b = input().split(' ')
+[print(i) for i in it.combinations(a, int(b))]
