@@ -1,5 +1,6 @@
 import re
 
+# 10 клиентов посетившие большее количество страниц
 client = dict()
 p = re.compile('^(\d{1,3}.?){4}')
 for line in open('access2.log', 'rt'):
@@ -16,7 +17,7 @@ for line in open('access2.log', 'rt'):
 print([id for id in sorted(client.items(), key = lambda item: item[1],
                               reverse = True)][:10])
 
-
+# 5 самых популярных платформ
 platform = dict()
 p = re.compile('^(?:\d{1,3}.?){4}[\s\S]*? \d{3} [^"]*?"[^"]*?" "[^\(]*?\((['
                '^\)]*?)\)')
