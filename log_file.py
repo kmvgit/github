@@ -32,4 +32,5 @@ for line in open('access2.log', 'rt'):
         else:
             platform.update({platform_name: 1})
 print([id for id in sorted(platform.items(), key = lambda item: item[1],
-                              reverse = True)][:5])
+                              reverse = True) if 'bot' not in id[0].lower()][
+      :5])
