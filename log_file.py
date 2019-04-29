@@ -17,7 +17,7 @@ def popular_customer(reg_str, log, count_str):
 
 def popular_platform(reg_str, log, count_str):
     """5 of the most popular platforms"""
-    
+
     dict_str = coll.defaultdict(int)
     with open(log, 'rt') as file_log:
         for line in file_log:
@@ -69,3 +69,4 @@ reg_platform = re.compile('^(?:\d{1,3}.?){4}[\s\S]*? \d{3} [^"]*?"[^"]*?" "['
                           '^\(]*?\((([^\)](?!bot))*?)\)')
 for line in popular(reg_platform, log, 5):
     print(line)
+
