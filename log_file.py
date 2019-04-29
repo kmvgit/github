@@ -1,8 +1,9 @@
 import re
 import collections as coll
 
-# 10 клиентов посетившие большее количество страниц
 def popular_customer(reg_str, log, count_str):
+    """10 customers visited more pages"""
+
     dict_str = coll.defaultdict(int)
     with open(log, 'rt') as file_log:
         for line in file_log:
@@ -14,8 +15,9 @@ def popular_customer(reg_str, log, count_str):
     list_ip = coll.Counter(dict_str).most_common(count_str)
     return list_ip
 
-# 5 самых популярных платформ
 def popular_platform(reg_str, log, count_str):
+    """5 of the most popular platforms"""
+    
     dict_str = coll.defaultdict(int)
     with open(log, 'rt') as file_log:
         for line in file_log:
@@ -42,8 +44,9 @@ for line_platform in popular_platform(reg_platform, log, 5):
     print(line_platform)
 
 
-# Вариант с одной функцией
 def popular(reg_str, log, count_str):
+    """Option with one function"""
+
     dict_str = coll.defaultdict(int)
     with open(log, 'rt') as file_log:
         for line in file_log:
