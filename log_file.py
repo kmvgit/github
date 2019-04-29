@@ -1,48 +1,42 @@
 import re
 import collections as coll
 
-class log_file:
-    def __init__(self, log):
-        self.dict_str = coll.defaultdict(int)
-        self.file_log = open(log, 'rt')
-
-    # 10 клиентов посетившие большее количество страниц
-    def popular_customer(self, count_str):
-        self.dict_str.clear()
-        self.file_log.seek(0)
-        self.reg_customer = re.compile('^(\d{1,3}.?){4}')
-        for line in self.file_log:
+# 10 клиентов посетившие большее количество страниц
+def popular_customer(log, count_str):
+    dict_str = coll.defaultdict(int)
+    with open(log, 'rt') as file_log:
+        reg_customer = re.compile('^(\d{1,3}.?){4}')
+        for line in file_log:
             try:
-                self.customer_ip = self.reg_customer.match(line).group(0)
+                customer_ip = reg_customer.match(line).group(0)
             except:
                 continue
-            self.dict_str[self.customer_ip] += 1
-        self.list_ip = coll.Counter(self.dict_str).most_common(count_str)
-        return self.list_ip
+            dict_str[customer_ip] += 1
+    list_ip = coll.Counter(dict_str).most_common(count_str)
+    return list_ip
 
-    # 5 самых популярных платформ
-    def popular_platform(self, count_str):
-        self.dict_str.clear()
-        self.file_log.seek(0)
-        self.reg_platform = re.compile('^(?:\d{1,3}.?){4}[\s\S]*? \d{3} [^"]*?"[^"]*?" "[^\(]*?\((['
-               '^\)]*?)\)')
-        for line in self.file_log:
+# 5 самых популярных платформ
+def popular_platform(log, count_str):
+    dict_str = coll.defaultdict(int)
+    with open(log, 'rt') as file_log:
+        reg_platform = re.compile('^(?:\d{1,3}.?){4}[\s\S]*? \d{3} [^"]*?"[^"]*?" "[^\(]*?\((['
+                                  '^\)]*?)\)')
+        for line in file_log:
             try:
-                self.platform_name = self.reg_platform.match(line).group(1)
+                platform_name = reg_platform.match(line).group(1)
             except:
                 continue
-            if 'bot' not in self.platform_name.lower():
-                self.dict_str[self.platform_name] += 1
-        self.list_platform = coll.Counter(self.dict_str).most_common(count_str)
-        return self.list_platform
+            if 'bot' not in platform_name.lower():
+                dict_str[platform_name] += 1
+    list_platform = coll.Counter(dict_str).most_common(count_str)
+    return list_platform
 
-
-result = log_file('access2.log')
+log = 'access2.log'
 
 print("_________________")
-for line_ip in result.popular_customer(10):
+for line_ip in popular_customer(log, 10):
     print(line_ip)
 
 print('_________________')
-for line_platform in result.popular_platform(5):
+for line_platform in popular_platform(log, 5):
     print(line_platform)
