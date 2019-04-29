@@ -1,8 +1,9 @@
 import re
+import collections as coll
 
 class log_file:
     def __init__(self, log):
-        self.dict_str = dict()
+        self.dict_str = coll.defaultdict(int)
         self.file_log = open(log, 'rt')
 
     # 10 клиентов посетившие большее количество страниц
@@ -15,14 +16,8 @@ class log_file:
                 self.customer_ip = self.reg_customer.match(line).group(0)
             except:
                 continue
-            else:
-                if self.customer_ip in self.dict_str:
-                    self.dict_str[self.customer_ip] += 1
-                else:
-                    self.dict_str.update({self.customer_ip: 1})
-        self.list_ip = [id for id in sorted(self.dict_str.items(),
-                                            key = lambda item: item[1],
-                                            reverse = True)][:count_str]
+            self.dict_str[self.customer_ip] += 1
+        self.list_ip = coll.Counter(self.dict_str).most_common(count_str)
         return self.list_ip
 
     # 5 самых популярных платформ
@@ -36,20 +31,13 @@ class log_file:
                 self.platform_name = self.reg_platform.match(line).group(1)
             except:
                 continue
-            else:
-                if self.platform_name in self.dict_str:
-                    self.dict_str[self.platform_name] += 1
-                else:
-                    self.dict_str.update({self.platform_name: 1})
-        self.list_platform =[id for id in sorted(self.dict_str.items(),
-                                            key = lambda item: item[1],
-                                            reverse = True) if 'bot' not in id[0].lower()][:count_str]
+            if 'bot' not in self.platform_name.lower():
+                self.dict_str[self.platform_name] += 1
+        self.list_platform = coll.Counter(self.dict_str).most_common(count_str)
         return self.list_platform
 
 
 result = log_file('access2.log')
-
-
 
 print("_________________")
 for line_ip in result.popular_customer(10):
