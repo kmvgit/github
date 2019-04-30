@@ -4,7 +4,7 @@ setup = """
 import re
 import collections as coll
 
-def popular(reg_str, log, count_str):
+def list_fun(reg_str, log):
 
 
     dict_str = coll.defaultdict(int)
@@ -15,14 +15,20 @@ def popular(reg_str, log, count_str):
             except:
                 continue
             dict_str[str_data] += 1
-    list_data = coll.Counter(dict_str).most_common(count_str)
+    list_data = [line[0] for line in coll.Counter(dict_str).most_common()]
     return list_data
 
-log = 'access2.log'
+def filt_fun(list_data, count_str, filt = None):
+    list_pos = [line for line in list_data if filt not in line]
+    return list_pos[:count_str]
 
+log = 'access2.log'
 reg_platform = re.compile('^(?:\d{1,3}.?){4}[\s\S]*? \d{3} [^"]*?"[^"]*?" "['
-                          '^\(]*?\((([^\)](?!bot))*?)\)')
-for line in popular(reg_platform, log, 5):
+                          '^\(]*?\(([^\)]*?)\)')
+
+list_data = list_fun(reg_platform, log)
+list_pos = list(filter(lambda pos: 'bot' not in pos, list_data))[:5]
+for line in list_pos:
     print(line)
 """
 

@@ -28,7 +28,8 @@ reg_platform = re.compile('^(?:\d{1,3}.?){4}[\s\S]*? \d{3} [^"]*?"[^"]*?" "['
 
 list_data = list_fun(reg_platform, log)
 list_pos = filt_fun(list_data, 5, 'bot')
-print(list_pos)
+for line in list_pos:
+    print(line)
 """
-time_code = timeit.timeit(setup = setup, number = 10)
+time_code = timeit.timeit(setup = setup, number = 100)
 print(time_code)
