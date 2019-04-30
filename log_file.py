@@ -4,7 +4,7 @@ import collections as coll
 log = 'access2.log'
 
 def popular(reg_str, log, count_str):
-    """Option with one function"""
+    """Log file analysis"""
 
     dict_str = coll.defaultdict(int)
     with open(log, 'rt') as file_log:
