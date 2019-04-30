@@ -27,4 +27,3 @@ reg_platform = re.compile('^(?:\d{1,3}.?){4}[\s\S]*? \d{3} [^"]*?"[^"]*?" "['
                           '^\(]*?\((([^\)](?!bot))*?)\)')
 for line in popular(reg_platform, log, 5):
     print(line)
-
