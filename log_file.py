@@ -1,8 +1,6 @@
 import re
 import collections as coll
 
-log = 'access2.log'
-
 def popular(reg_str, log, count_str):
     """Log file analysis"""
 
@@ -17,6 +15,8 @@ def popular(reg_str, log, count_str):
     list_data = coll.Counter(dict_str).most_common(count_str)
     return list_data
 
+log = 'access2.log'
+
 print('_________________')
 reg_customer = re.compile('(^(\d{1,3}.?){4})')
 for line in popular(reg_customer, log, 10):
@@ -27,3 +27,5 @@ reg_platform = re.compile('^(?:\d{1,3}.?){4}[\s\S]*? \d{3} [^"]*?"[^"]*?" "['
                           '^\(]*?\((([^\)](?!bot))*?)\)')
 for line in popular(reg_platform, log, 5):
     print(line)
+
+
