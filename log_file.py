@@ -26,5 +26,6 @@ for line in popular(reg_platform, log, 5):
     print(line)
 """
 
-time_code = timeit.timeit(setup = setup, number = 100)
-print(time_code)
+time_code = timeit.Timer(setup = setup)
+for val in time_code.repeat(10):
+    print(val)

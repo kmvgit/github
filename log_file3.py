@@ -32,5 +32,6 @@ for line in list_pos:
     print(line)
 """
 
-time_code = timeit.timeit(setup = setup, number = 100)
-print(time_code)
+time_code = timeit.Timer(setup = setup)
+for val in time_code.repeat(10):
+    print(val)

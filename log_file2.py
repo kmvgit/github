@@ -31,5 +31,6 @@ list_pos = filt_fun(list_data, 5, 'bot')
 for line in list_pos:
     print(line)
 """
-time_code = timeit.timeit(setup = setup, number = 100)
-print(time_code)
+time_code = timeit.Timer(setup = setup)
+for val in time_code.repeat(10):
+    print(val)
