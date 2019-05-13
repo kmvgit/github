@@ -60,7 +60,7 @@ def request_date(question, list_date):
 def format_date(dates):
     """Format the date"""
 
-    list_date = set(re.findall('\d+[,]?\d+[,]?\d+[.]?', dates))
+    list_date = set(re.findall(r'\d+[,]?\d+[,]?\d+[.]?', dates))
     list_date = [pos.split(',') for pos in list_date]
     list_date = ['{:02}.{:02}.{}'.format(int(el[2]), int(el[1]), int(el[0]))
                  for el in list_date]
