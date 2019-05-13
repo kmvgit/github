@@ -9,21 +9,13 @@ from lxml import html
 
 departure_cities = ['CPH', 'BLL', 'PDV', 'BOJ', 'SOF', 'VAR']
 arrival_cities = []
-proxies = None
-session = requests.session()
+proxies = {
+    'http': '127.0.0.1:8888',
+    'https': '127.0.0.1:8888'
+}
+
 departure_date = ''
 arrival_date = ''
-
-
-def request_url(departure_city, arrival_city, departure_dates, arrival_dates):
-    """Forming a string for GET request"""
-
-    url = 'https://apps.penguin.bg/fly/quote3.aspx?{}=&lang=en&depdate={}&aptcode1={}{}&aptcode2={}&paxcount=1&infcount='.format(
-        'ow' if arrival_date is None else 'rt', departure_dates, departure_city,
-        f'&rtdate={arrival_dates}' if arrival_dates is not None else "",
-        arrival_city)
-    return url
-
 
 def request_departure_city():
     """The request of the city from where you want to fly"""
@@ -163,7 +155,8 @@ def amount_time(time1, time2):
 def main():
     """The main function of collecting flight information"""
 
-    global arrival_cities, departure_date, arrival_date, proxies, session
+    global arrival_cities, departure_date, arrival_date, proxies
+    session = requests.session()
     departure_city = request_departure_city()
     url = f'http://www.flybulgarien.dk/script/getcity/2-{departure_city}'
     result = session.get(url=url, proxies=proxies, verify=False).json()
@@ -173,14 +166,13 @@ def main():
     direction = f'code1={departure_city}&code2={arrival_city}'
     headers = {
         'Accept': '*/*',
-        'X - Requested - With': 'XMLHttpRequest',
-        'User - Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) '
-        'AppleWebKit/537.36 (KHTML, like Gecko)'
-        'Chrome/73.0.3683.86 YaBrowser/19.4.0.2397 Yowser/2.5 Sa',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'ru, en;q = 0.9',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 YaBrowser/19.4.0.2397 Yowser/2.5 Safari/537.36',
+        'X-Requested-With': 'XMLHttpRequest',
         'Content-Type': 'application/x-www-form-urlencoded',
         'Referer': 'http://www.flybulgarien.dk/en/',
-        'Accept - Encoding': 'gzip, deflate',
-        'Accept - Language': 'ru, en;q = 0.9'
+        'Origin': 'http://www.flybulgarien.dk'
     }
     result = session.post(url=url, data=direction, headers=headers,
                           proxies=proxies, verify=False).text
@@ -204,9 +196,20 @@ def main():
         arrival_date = None
         print('You have entered an incorrect answer.\r\nThe search will'
               ' be made without taking into account the date of return.')
-    url = request_url(departure_city, arrival_city,
-                      departure_date, arrival_date)
-    result = session.get(url=url, proxies=proxies, verify=False)
+    url = 'https://apps.penguin.bg/fly/quote3.aspx'
+    params = {
+        f'{"ow" if arrival_date is None else "rt"}': '',
+        'lang': 'en',
+        'depdate': departure_date,
+        'aptcode1': departure_city,
+        'rtdate' if arrival_date is not None else "": arrival_date if
+        arrival_date is not None else "",
+        'aptcode2': arrival_city,
+        'paxcount': '1',
+        'infcount': ''
+    }
+
+    result = session.get(url=url, params=params, proxies=proxies, verify=False)
     combinations_list = parse_data(result.text)
     for option in combinations_list:
         print('**********')
