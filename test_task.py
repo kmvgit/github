@@ -48,12 +48,13 @@ def list_dates(session, departure_city, arrival_city):
 
 def format_date(dates):
     """Return the list of dates in the format 01.01.2009."""
+    print(dates)
     list_date = set(re.findall(r'\d+[,]?\d+[,]?\d+[.]?', dates))
     list_date = [pos.split(',') for pos in list_date]
-    list_date.sort(key=lambda x: x[2])
-    list_date.sort(key=lambda x: x[1])
-    list_date = ['{:02}.{:02}.{}'.format(int(el[2]), int(el[1]), int(el[0]))
-                 for el in list_date]
+    list_date = [datetime.datetime.strptime(f'{el[2]}.{el[1]}.{el[0]}',
+                                            '%d.%m.%Y') for el in list_date]
+    list_date.sort()
+    list_date = [el.strftime('%d.%m.%Y') for el in list_date]
     return list_date
 
 
