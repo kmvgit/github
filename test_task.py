@@ -9,7 +9,6 @@ from lxml import html
 
 def request_city(cities, question):
     """To request a city from the user."""
-
     city = input(f'{question}\r\n('
                  f'{",".join(cities)})').upper()
     if city not in cities:
@@ -20,7 +19,6 @@ def request_city(cities, question):
 
 def option_fight(session, departure_city):
     """Return the options of directions."""
-
     url = f'http://www.flybulgarien.dk/script/getcity/2-{departure_city}'
     result = session.get(url=url, proxies=None, verify=False).json()
     return result
@@ -28,7 +26,6 @@ def option_fight(session, departure_city):
 
 def list_dates(session, departure_city, arrival_city):
     """Return date variants."""
-
     url = 'http://www.flybulgarien.dk/script/getdates/2-departure'
     headers = {
         'Accept': '*/*',
@@ -51,7 +48,6 @@ def list_dates(session, departure_city, arrival_city):
 
 def format_date(dates):
     """Return the list of dates in the format 01.01.2009."""
-
     list_date = set(re.findall(r'\d+[,]?\d+[,]?\d+[.]?', dates))
     list_date = [pos.split(',') for pos in list_date]
     list_date.sort(key=lambda x: x[2])
@@ -63,7 +59,6 @@ def format_date(dates):
 
 def request_date(question, list_date):
     """Request a date from the user."""
-
     date = input(question)
     if date not in list_date:
         print('You have entered incorrect data')
@@ -74,7 +69,6 @@ def request_date(question, list_date):
 def recuested_information(session, departure_city, arrival_city,
                           departure_date, arrival_date):
     """Get information from the server."""
-
     url = 'https://apps.penguin.bg/fly/quote3.aspx'
     params = {
         f'{"ow" if arrival_date is None else "rt"}': '',
@@ -94,7 +88,6 @@ def recuested_information(session, departure_city, arrival_city,
 
 def actual_data(date_list, date_actual):
     """Return information according to the selected date."""
-
     actual_list = []
     for position in date_list:
         date = position[0].xpath('.//td[2]/text()')[0].split(' ')
@@ -114,7 +107,6 @@ def actual_data(date_list, date_actual):
 
 def combinations_flight(departure_actual, arrival_actual):
     """Return flight options according to the selected date."""
-
     if arrival_actual:
         combinations_list = [
             [departure, arrival] for departure in departure_actual
@@ -126,7 +118,6 @@ def combinations_flight(departure_actual, arrival_actual):
 
 def parse_data(xml, departure_date, arrival_date):
     """Parse the data and return possible combinations of flights."""
-
     page = html.document_fromstring(xml)
     departure_list_str1 = page.xpath(
         './/tr[starts-with(@id, "flywiz_rinf")]')
@@ -146,7 +137,6 @@ def parse_data(xml, departure_date, arrival_date):
 
 def out_result(combinations_list):
     """Display information to the user."""
-
     if not combinations_list:
         print('No data found for the specified parameters')
     for option in combinations_list:
@@ -180,7 +170,6 @@ def out_result(combinations_list):
 
 def duration_flight(start, finish):
     """Calculate the difference between two time points."""
-
     start = start.split(':')
     finish = finish.split(':')
     if int(finish[0]) < int(start[0]):
@@ -197,7 +186,6 @@ def duration_flight(start, finish):
 
 def amount_time(time1, time2):
     """Calculate the sum of two time intervals."""
-
     time1 = time1.split(':')
     time2 = time2.split(':')
     amount_hour = int(time1[0]) + int(time2[0])
@@ -211,7 +199,6 @@ def amount_time(time1, time2):
 
 def main():
     """To return the options for possible flights."""
-
     session = requests.session()
     departure_city = request_city(
         ['CPH', 'BLL', 'PDV', 'BOJ', 'SOF', 'VAR'],
