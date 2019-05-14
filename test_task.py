@@ -98,7 +98,10 @@ def duration_flight(start, finish):
 
     start = start.split(':')
     finish = finish.split(':')
-    delta_hour = int(finish[0]) + 24 - int(start[0])
+    if int(finish[0]) < int(start[0]):
+        delta_hour = int(finish[0]) + 24 - int(start[0])
+    else:
+        delta_hour = int(finish[0]) - int(start[0])
     delta_minute = int(finish[1]) - int(start[1])
     if delta_minute < 0:
         delta_hour -= 1
