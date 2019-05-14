@@ -205,30 +205,34 @@ def main():
         ['CPH', 'BLL', 'PDV', 'BOJ', 'SOF', 'VAR'],
         'Where do you want to fly from?')
     option = option_fight(session, departure_city)
-    arrival_city = request_city(
-        [key for key in option], 'Where do you want to fly?')
-    dates = list_dates(session, departure_city, arrival_city)
-    list_date = format_date(dates)
-    departure_date = request_date(f"Departure date?\r\n(in the format"
-                                  f" 01.01.2019)\r\n(available dates:"
-                                  f" {','.join(list_date)})", list_date)
-    arrival_date = input('Choose a return date? (y\\n)')
-    if arrival_date.lower() == 'y':
-        arrival_date = request_date("Return date?\r\n(in the format"
-                                    " 01.01.2019)\r\n(Press enter if it"
-                                    " does not matter.)"
-                                    f"\r\n(available dates:"
-                                    f" {','.join(list_date)})", list_date)
+    if not option:
+        out_result([])
     else:
-        arrival_date = None
-        print('The search will be made without taking'
-              ' into account the date of return.')
-    information = recuested_information(session,
-                                        departure_city,
-                                        arrival_city,
-                                        departure_date, arrival_date)
-    combinations_list = parse_data(information, departure_date, arrival_date)
-    out_result(combinations_list)
+        arrival_city = request_city(
+            [key for key in option], 'Where do you want to fly?')
+        dates = list_dates(session, departure_city, arrival_city)
+        list_date = format_date(dates)
+        departure_date = request_date(f"Departure date?\r\n(in the format"
+                                      f" 01.01.2019)\r\n(available dates:"
+                                      f" {','.join(list_date)})", list_date)
+        arrival_date = input('Choose a return date? (y\\n)')
+        if arrival_date.lower() == 'y':
+            arrival_date = request_date("Return date?\r\n(in the format"
+                                        " 01.01.2019)\r\n(Press enter if it"
+                                        " does not matter.)"
+                                        f"\r\n(available dates:"
+                                        f" {','.join(list_date)})", list_date)
+        else:
+            arrival_date = None
+            print('The search will be made without taking'
+                  ' into account the date of return.')
+        information = recuested_information(session,
+                                            departure_city,
+                                            arrival_city,
+                                            departure_date, arrival_date)
+        combinations_list = parse_data(
+            information, departure_date, arrival_date)
+        out_result(combinations_list)
 
 
 if __name__ == '__main__':
