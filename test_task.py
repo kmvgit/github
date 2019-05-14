@@ -7,17 +7,6 @@ import requests
 from lxml import html
 
 
-DEPARTURE_CITIES = ['CPH', 'BLL', 'PDV', 'BOJ', 'SOF', 'VAR']
-ARRIVAL_CITIES = []
-PROXIES = {
-    'http': '127.0.0.1:8888',
-    'https': '127.0.0.1:8888'
-}
-PROXIES = None
-DEPARTURE_DATE = ''
-ARRIVAL_DATE = ''
-
-
 def request_city(cities, question):
     """The request of the city"""
 
@@ -81,7 +70,7 @@ def combinations_flight(departure_actual, arrival_actual):
     return combinations_list
 
 
-def parse_data(xml):
+def parse_data(xml, departure_date, arrival_date):
     """Parsing information from the site"""
 
     page = html.document_fromstring(xml)
@@ -95,8 +84,8 @@ def parse_data(xml):
     arrival_list_str2 = page.xpath(
         './/tr[starts-with(@id, "flywiz_irprc")]')
     arrival_list_element = zip(arrival_list_str1, arrival_list_str2)
-    departure_actual = actual_data(departure_list_element, DEPARTURE_DATE)
-    arrival_actual = actual_data(arrival_list_element, ARRIVAL_DATE)
+    departure_actual = actual_data(departure_list_element, departure_date)
+    arrival_actual = actual_data(arrival_list_element, arrival_date)
     combinations_list = combinations_flight(departure_actual, arrival_actual)
     return combinations_list
 
@@ -134,17 +123,14 @@ def amount_time(time1, time2):
 def main():
     """The main function of collecting flight information"""
 
-    global ARRIVAL_CITIES, DEPARTURE_DATE, ARRIVAL_DATE
-    session = requests.session()
     departure_city = request_city(
-        DEPARTURE_CITIES, 'Where do you want to fly from?')
+        ['CPH', 'BLL', 'PDV', 'BOJ', 'SOF', 'VAR'],
+        'Where do you want to fly from?')
     url = f'http://www.flybulgarien.dk/script/getcity/2-{departure_city}'
-    result = session.get(url=url, proxies=PROXIES, verify=False).json()
-    ARRIVAL_CITIES = [key for key in result]
+    result = requests.session().get(url=url, proxies=None, verify=False).json()
     arrival_city = request_city(
-        ARRIVAL_CITIES, 'Where do you want to fly?')
+        [key for key in result], 'Where do you want to fly?')
     url = 'http://www.flybulgarien.dk/script/getdates/2-departure'
-    direction = f'code1={departure_city}&code2={arrival_city}'
     headers = {
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate',
@@ -158,42 +144,43 @@ def main():
         'Referer': 'http://www.flybulgarien.dk/en/',
         'Origin': 'http://www.flybulgarien.dk'
     }
-    result = session.post(url=url, data=direction, headers=headers,
-                          proxies=PROXIES, verify=False).text
+    result = requests.session().post(
+        url=url, data=f'code1={departure_city}&code2={arrival_city}',
+        headers=headers, proxies=None, verify=False).text
     list_date = format_date(result)
-
-    DEPARTURE_DATE = request_date(f"Departure date?\r\n(in the format"
+    departure_date = request_date(f"Departure date?\r\n(in the format"
                                   f" 01.01.2019)\r\n(available dates:"
                                   f" {','.join(list_date)})", list_date)
-    ARRIVAL_DATE = input('Choose a return date? (y\\n)')
-    if ARRIVAL_DATE.lower() == 'y':
-        ARRIVAL_DATE = request_date("Return date?\r\n(in the format"
+    arrival_date = input('Choose a return date? (y\\n)')
+    if arrival_date.lower() == 'y':
+        arrival_date = request_date("Return date?\r\n(in the format"
                                     " 01.01.2019)\r\n(Press enter if it"
                                     " does not matter.)"
                                     f"\r\n(available dates:"
                                     f" {','.join(list_date)})", list_date)
-    elif ARRIVAL_DATE.lower() == 'n':
-        ARRIVAL_DATE = None
+    elif arrival_date.lower() == 'n':
+        arrival_date = None
         print('The search will be made without taking'
               ' into account the date of return.')
     else:
-        ARRIVAL_DATE = None
+        arrival_date = None
         print('You have entered an incorrect answer.\r\nThe search will'
               ' be made without taking into account the date of return.')
     url = 'https://apps.penguin.bg/fly/quote3.aspx'
     params = {
-        f'{"ow" if ARRIVAL_DATE is None else "rt"}': '',
+        f'{"ow" if arrival_date is None else "rt"}': '',
         'lang': 'en',
-        'depdate': DEPARTURE_DATE,
+        'depdate': departure_date,
         'aptcode1': departure_city,
-        'rtdate' if ARRIVAL_DATE is not None else "":
-            ARRIVAL_DATE if ARRIVAL_DATE is not None else "",
+        'rtdate' if arrival_date is not None else "":
+            arrival_date if arrival_date is not None else "",
         'aptcode2': arrival_city,
         'paxcount': '1',
         'infcount': ''
     }
-    result = session.get(url=url, params=params, proxies=PROXIES, verify=False)
-    combinations_list = parse_data(result.text)
+    result = requests.session().get(
+        url=url, params=params, proxies=None, verify=False)
+    combinations_list = parse_data(result.text, departure_date, arrival_date)
     for option in combinations_list:
         print('**********')
         print('Going Out')
