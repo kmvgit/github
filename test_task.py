@@ -33,9 +33,11 @@ def format_date(dates):
 
     list_date = set(re.findall(r'\d+[,]?\d+[,]?\d+[.]?', dates))
     list_date = [pos.split(',') for pos in list_date]
+    list_date.sort(key=lambda x: x[2])
+    list_date.sort(key=lambda x: x[1])
     list_date = ['{:02}.{:02}.{}'.format(int(el[2]), int(el[1]), int(el[0]))
                  for el in list_date]
-    return sorted(list_date)
+    return list_date
 
 
 def actual_data(date_list, date_actual):
@@ -181,6 +183,8 @@ def main():
     result = requests.session().get(
         url=url, params=params, proxies=None, verify=False)
     combinations_list = parse_data(result.text, departure_date, arrival_date)
+    if not combinations_list:
+        print('No data found for the specified parameters')
     for option in combinations_list:
         print('**********')
         print('Going Out')
