@@ -7,35 +7,25 @@ import requests
 from lxml import html
 
 
-departure_cities = ['CPH', 'BLL', 'PDV', 'BOJ', 'SOF', 'VAR']
-arrival_cities = []
-proxies = {
+DEPARTURE_CITIES = ['CPH', 'BLL', 'PDV', 'BOJ', 'SOF', 'VAR']
+ARRIVAL_CITIES = []
+PROXIES = {
     'http': '127.0.0.1:8888',
     'https': '127.0.0.1:8888'
 }
+PROXIES = None
+DEPARTURE_DATE = ''
+ARRIVAL_DATE = ''
 
-departure_date = ''
-arrival_date = ''
 
-def request_departure_city():
-    """The request of the city from where you want to fly"""
+def request_city(cities, question):
+    """The request of the city"""
 
-    global departure_cities
-    city = input(f'Where do you want to fly from?\r\n({",".join(departure_cities)})').upper()
-    if city not in departure_cities:
+    city = input(f'{question}\r\n('
+                 f'{",".join(cities)})').upper()
+    if city not in cities:
         print('You have entered incorrect data')
-        city = request_departure_city()
-    return city
-
-
-def request_arrival_city():
-    """The request of the city where you want to fly"""
-
-    global arrival_cities
-    city = input(f'Where do you want to fly?\r\n({",".join(arrival_cities)})').upper()
-    if city not in arrival_cities:
-        print('You have entered incorrect data')
-        city = request_arrival_city()
+        city = request_city(cities, question)
     return city
 
 
@@ -57,16 +47,6 @@ def format_date(dates):
     list_date = ['{:02}.{:02}.{}'.format(int(el[2]), int(el[1]), int(el[0]))
                  for el in list_date]
     return sorted(list_date)
-
-
-def split_list(list_element, count_element):
-    """Splitting the list into the
-       required number of sublists"""
-
-    element_list = []
-    for index in range(0, len(list_element), count_element):
-        element_list.append(list_element[index:index + count_element])
-    return element_list
 
 
 def actual_data(date_list, date_actual):
@@ -104,7 +84,6 @@ def combinations_flight(departure_actual, arrival_actual):
 def parse_data(xml):
     """Parsing information from the site"""
 
-    global departure_date, arrival_date
     page = html.document_fromstring(xml)
     departure_list_str1 = page.xpath(
         './/tr[starts-with(@id, "flywiz_rinf")]')
@@ -116,8 +95,8 @@ def parse_data(xml):
     arrival_list_str2 = page.xpath(
         './/tr[starts-with(@id, "flywiz_irprc")]')
     arrival_list_element = zip(arrival_list_str1, arrival_list_str2)
-    departure_actual = actual_data(departure_list_element, departure_date)
-    arrival_actual = actual_data(arrival_list_element, arrival_date)
+    departure_actual = actual_data(departure_list_element, DEPARTURE_DATE)
+    arrival_actual = actual_data(arrival_list_element, ARRIVAL_DATE)
     combinations_list = combinations_flight(departure_actual, arrival_actual)
     return combinations_list
 
@@ -155,61 +134,65 @@ def amount_time(time1, time2):
 def main():
     """The main function of collecting flight information"""
 
-    global arrival_cities, departure_date, arrival_date, proxies
+    global ARRIVAL_CITIES, DEPARTURE_DATE, ARRIVAL_DATE
     session = requests.session()
-    departure_city = request_departure_city()
+    departure_city = request_city(
+        DEPARTURE_CITIES, 'Where do you want to fly from?')
     url = f'http://www.flybulgarien.dk/script/getcity/2-{departure_city}'
-    result = session.get(url=url, proxies=proxies, verify=False).json()
-    arrival_cities = [key for key in result]
-    arrival_city = request_arrival_city()
+    result = session.get(url=url, proxies=PROXIES, verify=False).json()
+    ARRIVAL_CITIES = [key for key in result]
+    arrival_city = request_city(
+        ARRIVAL_CITIES, 'Where do you want to fly?')
     url = 'http://www.flybulgarien.dk/script/getdates/2-departure'
     direction = f'code1={departure_city}&code2={arrival_city}'
     headers = {
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate',
         'Accept-Language': 'ru, en;q = 0.9',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 YaBrowser/19.4.0.2397 Yowser/2.5 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64)'
+                      ' AppleWebKit/537.36 (KHTML, like Gecko)'
+                      ' Chrome/73.0.3683.86 YaBrowser/19.4.0.2397'
+                      ' Yowser/2.5 Safari/537.36',
         'X-Requested-With': 'XMLHttpRequest',
         'Content-Type': 'application/x-www-form-urlencoded',
         'Referer': 'http://www.flybulgarien.dk/en/',
         'Origin': 'http://www.flybulgarien.dk'
     }
     result = session.post(url=url, data=direction, headers=headers,
-                          proxies=proxies, verify=False).text
+                          proxies=PROXIES, verify=False).text
     list_date = format_date(result)
 
-    departure_date = request_date(f"Departure date?\r\n(in the format"
+    DEPARTURE_DATE = request_date(f"Departure date?\r\n(in the format"
                                   f" 01.01.2019)\r\n(available dates:"
                                   f" {','.join(list_date)})", list_date)
-    arrival_date = input('Choose a return date? (y\\n)')
-    if arrival_date.lower() == 'y':
-        arrival_date = request_date("Return date?\r\n(in the format"
+    ARRIVAL_DATE = input('Choose a return date? (y\\n)')
+    if ARRIVAL_DATE.lower() == 'y':
+        ARRIVAL_DATE = request_date("Return date?\r\n(in the format"
                                     " 01.01.2019)\r\n(Press enter if it"
                                     " does not matter.)"
                                     f"\r\n(available dates:"
                                     f" {','.join(list_date)})", list_date)
-    elif arrival_date.lower() == 'n':
-        arrival_date = None
+    elif ARRIVAL_DATE.lower() == 'n':
+        ARRIVAL_DATE = None
         print('The search will be made without taking'
               ' into account the date of return.')
     else:
-        arrival_date = None
+        ARRIVAL_DATE = None
         print('You have entered an incorrect answer.\r\nThe search will'
               ' be made without taking into account the date of return.')
     url = 'https://apps.penguin.bg/fly/quote3.aspx'
     params = {
-        f'{"ow" if arrival_date is None else "rt"}': '',
+        f'{"ow" if ARRIVAL_DATE is None else "rt"}': '',
         'lang': 'en',
-        'depdate': departure_date,
+        'depdate': DEPARTURE_DATE,
         'aptcode1': departure_city,
-        'rtdate' if arrival_date is not None else "": arrival_date if
-        arrival_date is not None else "",
+        'rtdate' if ARRIVAL_DATE is not None else "":
+            ARRIVAL_DATE if ARRIVAL_DATE is not None else "",
         'aptcode2': arrival_city,
         'paxcount': '1',
         'infcount': ''
     }
-
-    result = session.get(url=url, params=params, proxies=proxies, verify=False)
+    result = session.get(url=url, params=params, proxies=PROXIES, verify=False)
     combinations_list = parse_data(result.text)
     for option in combinations_list:
         print('**********')
@@ -230,9 +213,11 @@ def main():
                                               option[1]["time_to"])
             print(f'duration of flight: {duration_times2}')
             print(f'price: {option[1]["price"]}')
-            print(f'\ntotal price:'
-                  f' {float(option[0]["price"][:-4]) + float(option[1]["price"][:-4])}'
-                  f' {option[0]["price"][-3:]}')
+            departure_price = float(option[0]["price"][:-4])
+            arrival_prace = float(option[1]["price"][:-4])
+            print(
+                f'\ntotal price: {departure_price + arrival_prace}'
+                f' {option[0]["price"][-3:]}')
             print(f'total time of flight:'
                   f' {amount_time(duration_times1, duration_times2)}')
         print('**********\n')
