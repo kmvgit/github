@@ -106,7 +106,7 @@ def duration_flight(start, finish):
     if delta_minute < 0:
         delta_hour -= 1
         delta_minute = 60 + delta_minute
-    delta = '{}:{}'.format(delta_hour, delta_minute)
+    delta = '{}:{:02}'.format(delta_hour, delta_minute)
     return delta
 
 
@@ -121,7 +121,7 @@ def amount_time(time1, time2):
     if amount_minute > 60:
         amount_hour += 1
         amount_minute = amount_minute - 60
-    amount = '{}:{}'.format(amount_hour, amount_minute)
+    amount = '{}:{:02}'.format(amount_hour, amount_minute)
     return amount
 
 
