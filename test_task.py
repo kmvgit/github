@@ -20,7 +20,7 @@ def request_city(cities, question):
     return city
 
 
-def option_fight(session, departure_city):
+def get_option_directions(session, departure_city):
     """Return the options of directions."""
     url = f'http://www.flybulgarien.dk/script/getcity/2-{departure_city}'
     result = session.get(url=url).json()
@@ -195,7 +195,7 @@ def main():
     departure_city = request_city(
         ['CPH', 'BLL', 'PDV', 'BOJ', 'SOF', 'VAR'],
         'Where do you want to fly from?')
-    option = option_fight(session, departure_city)
+    option = get_option_directions(session, departure_city)
     if not option:
         out_result([])
     else:
