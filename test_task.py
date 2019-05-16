@@ -2,6 +2,8 @@
 
 import re
 import datetime
+import argparse
+import itertools
 
 import requests
 from lxml import html
@@ -9,18 +11,19 @@ from lxml import html
 
 def request_city(cities, question):
     """To request a city from the user."""
-    city = input(f'{question}\r\n('
-                 f'{",".join(cities)})').upper()
-    if city not in cities:
+    while True:
+        city = input(f'{question}\r\n('
+                     f'{",".join(cities)})').upper()
+        if city in cities:
+            break
         print('You have entered incorrect data')
-        city = request_city(cities, question)
     return city
 
 
 def option_fight(session, departure_city):
     """Return the options of directions."""
     url = f'http://www.flybulgarien.dk/script/getcity/2-{departure_city}'
-    result = session.get(url=url, proxies=None, verify=False).json()
+    result = session.get(url=url).json()
     return result
 
 
@@ -42,7 +45,7 @@ def list_dates(session, departure_city, arrival_city):
     }
     result = session.post(
         url=url, data=f'code1={departure_city}&code2={arrival_city}',
-        headers=headers, proxies=None, verify=False).text
+        headers=headers).text
     return result
 
 
@@ -59,10 +62,11 @@ def format_date(dates):
 
 def request_date(question, list_date):
     """Request a date from the user."""
-    date = input(question)
-    if date not in list_date:
+    while True:
+        date = input(question)
+        if date in list_date:
+            break
         print('You have entered incorrect data')
-        date = request_date(question, list_date)
     return date
 
 
@@ -82,7 +86,7 @@ def recuested_information(session, departure_city, arrival_city,
         'infcount': ''
     }
     result = session.get(
-        url=url, params=params, proxies=None, verify=False)
+        url=url, params=params)
     return result.text
 
 
@@ -94,13 +98,15 @@ def actual_data(date_list, date_actual):
         date_str = datetime.datetime.strptime(
             f'{date[1]}.{date[2]}.{date[3]}', '%d.%b.%y').strftime('%d.%m.%Y')
         if date_str == date_actual:
-            actual_dict = {}
-            actual_dict['date'] = date_str
-            actual_dict['time_from'] = position[0].xpath('.//td[3]/text()')[0]
-            actual_dict['time_to'] = position[0].xpath('.//td[4]/text()')[0]
-            actual_dict['city_from'] = position[0].xpath('.//td[5]/text()')[0]
-            actual_dict['city_to'] = position[0].xpath('.//td[6]/text()')[0]
-            actual_dict['price'] = position[1].xpath('.//td[2]/text()')[0][8:]
+            actual_dict = {
+                'date': date_str,
+                'time_from': position[0].xpath('.//td[3]/text()')[0],
+                'time_to': position[0].xpath('.//td[4]/text()')[0],
+                'city_from': position[0].xpath('.//td[5]/text()')[0],
+                'city_to': position[0].xpath('.//td[6]/text()')[0],
+                'price': position[1].xpath('.//td[2]/text()')[0][8:-4],
+                'currency': position[1].xpath('.//td[2]/text()')[0][-3:]
+                }
             actual_list.append(actual_dict)
     return actual_list
 
@@ -108,11 +114,9 @@ def actual_data(date_list, date_actual):
 def combinations_flight(departure_actual, arrival_actual):
     """Return flight options according to the selected date."""
     if arrival_actual:
-        combinations_list = [
-            [departure, arrival] for departure in departure_actual
-            for arrival in arrival_actual]
+        combinations_list = itertools.product(departure_actual, arrival_actual)
     elif not arrival_actual:
-        combinations_list = [[departure] for departure in departure_actual]
+        combinations_list = [departure_actual]
     return combinations_list
 
 
@@ -145,56 +149,44 @@ def out_result(combinations_list):
         print(f'date of departure: {option[0]["date"]}')
         print(f'time of departure: {option[0]["time_from"]}')
         print(f'boarding time: {option[0]["time_to"]}')
-        duration_times1 = duration_flight(option[0]["time_from"],
-                                          option[0]["time_to"])
+        duration_times1 = calculate_time(option[0]["time_from"],
+                                          option[0]["time_to"],
+                                         'difference')
         print(f'duration of flight: {duration_times1}')
-        print(f'price: {option[0]["price"]}')
+        print(f'price: {option[0]["price"]} {option[0]["currency"]}')
         if len(option) == 2:
             print('\nComing Back')
             print(f'date of departure: {option[1]["date"]}')
             print(f'time of departure: {option[1]["time_from"]}')
             print(f'boarding time: {option[1]["time_to"]}')
-            duration_times2 = duration_flight(option[1]["time_from"],
-                                              option[1]["time_to"])
+            duration_times2 = calculate_time(option[1]["time_from"],
+                                              option[1]["time_to"],
+                                             'difference')
             print(f'duration of flight: {duration_times2}')
-            print(f'price: {option[1]["price"]}')
-            departure_price = float(option[0]["price"][:-4])
-            arrival_prace = float(option[1]["price"][:-4])
+            print(f'price: {option[1]["price"]} {option[1]["currency"]}')
+            departure_price = float(option[0]["price"])
+            arrival_prace = float(option[1]["price"])
             print(
-                f'\ntotal price: {departure_price + arrival_prace}'
-                f' {option[0]["price"][-3:]}')
+                f'\ntotal price: '
+                f'{"{:.2f}".format(departure_price + arrival_prace)} '
+                f'{option[1]["currency"]}')
             print(f'total time of flight:'
-                  f' {amount_time(duration_times1, duration_times2)}')
+                  f' {calculate_time(duration_times1, duration_times2, "amount")}')
         print('**********\n')
 
 
-def duration_flight(start, finish):
-    """Calculate the difference between two time points."""
-    start = start.split(':')
-    finish = finish.split(':')
-    if int(finish[0]) < int(start[0]):
-        delta_hour = int(finish[0]) + 24 - int(start[0])
-    else:
-        delta_hour = int(finish[0]) - int(start[0])
-    delta_minute = int(finish[1]) - int(start[1])
-    if delta_minute < 0:
-        delta_hour -= 1
-        delta_minute = 60 + delta_minute
-    delta = '{}:{:02}'.format(delta_hour, delta_minute)
-    return delta
-
-
-def amount_time(time1, time2):
-    """Calculate the sum of two time intervals."""
-    time1 = time1.split(':')
-    time2 = time2.split(':')
-    amount_hour = int(time1[0]) + int(time2[0])
-    amount_minute = int(time1[1]) - int(time2[1])
-    if amount_minute > 60:
-        amount_hour += 1
-        amount_minute = amount_minute - 60
-    amount = '{}:{:02}'.format(amount_hour, amount_minute)
-    return amount
+def calculate_time(first_time, second_time, action):
+    """Return the difference or sum of two time intervals."""
+    first_time = datetime.datetime.strptime(first_time, '%H:%M')
+    second_time = datetime.datetime.strptime(second_time, '%H:%M')
+    if action == 'difference':
+        result = second_time - datetime.timedelta(
+            hours=first_time.hour, minutes=first_time.minute)
+    elif action == 'amount':
+        result = second_time + datetime.timedelta(
+            hours=first_time.hour, minutes=first_time.minute)
+    result = result.strftime('%H:%M')
+    return result
 
 
 def main():
