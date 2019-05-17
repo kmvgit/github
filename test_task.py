@@ -26,6 +26,7 @@ def get_option_directions(session, departure_city):
     url = f'http://www.flybulgarien.dk/script/getcity/2-{departure_city}'
     try:
         result = session.get(url=url).json()
+        return result
     except requests.exceptions.ConnectionError:
         print(
             'Sorry, the service is currently unavailable.'
@@ -39,8 +40,6 @@ def get_option_directions(session, departure_city):
     except json.JSONDecodeError:
         print('Incorrect data were obtained.')
         sys.exit()
-    else:
-        return result
 
 
 def list_dates(session, departure_city, arrival_city):
@@ -63,6 +62,7 @@ def list_dates(session, departure_city, arrival_city):
         result = session.post(
             url=url, data=f'code1={departure_city}&code2={arrival_city}',
             headers=headers).text
+        return result
     except requests.exceptions.ConnectionError:
         print(
             'Sorry, the service is currently unavailable.'
@@ -74,8 +74,6 @@ def list_dates(session, departure_city, arrival_city):
             ' because the server did not respond in time.'
             '\r\nPlease try again later.')
         sys.exit()
-    else:
-        return result
 
 
 def format_date(dates):
@@ -123,6 +121,7 @@ def requested_information(session, departure_city, arrival_city,
     try:
         result = session.get(
             url=url, params=params).text
+        return result
     except requests.exceptions.ConnectionError:
         print(
             'Sorry, the service is currently unavailable.'
@@ -134,8 +133,6 @@ def requested_information(session, departure_city, arrival_city,
             ' because the server did not respond in time.'
             '\r\nPlease try again later.')
         sys.exit()
-    else:
-        return result
 
 
 def actual_data(date_list, date_actual):
@@ -173,12 +170,6 @@ def parse_data(xml, departure_date, arrival_date):
     """Parse the data and return possible combinations of flights."""
     try:
         page = html.document_fromstring(xml)
-    except ValueError:
-        print('Something went wrong. '
-              'Further work with the '
-              'service is impossible.')
-        sys.exit()
-    else:
         departure_list_str1 = page.xpath(
             './/tr[starts-with(@id, "flywiz_rinf")]')
         departure_list_str2 = page.xpath(
@@ -194,6 +185,11 @@ def parse_data(xml, departure_date, arrival_date):
         combinations_list = combinations_flight(departure_actual,
                                                 arrival_actual)
         return combinations_list
+    except ValueError:
+        print('Something went wrong. '
+              'Further work with the '
+              'service is impossible.')
+        sys.exit()
 
 
 def out_result(combinations_list):
