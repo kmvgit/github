@@ -52,7 +52,6 @@ def get_option_directions(data_base, field):
         sys.exit()
 
 
-
 def request_date(question, days, name_days):
     """Request a date from the user."""
     while True:
