@@ -25,22 +25,35 @@ def request_city(cities, question):
 
 def get_option_departure(data_base):
     """Return the options of departure."""
-    result = set(data_base.execute("SELECT DEPART_IATA FROM data"))
-    result = [el[0] for el in result]
-    return result
+    try:
+        result = set(data_base.execute("SELECT DEPART_IATA FROM data"))
+        result = [el[0] for el in result]
+        return result
+    except sqlite3.OperationalError:
+        print('Something went wrong. '
+              'Further work with the '
+              'service is impossible.')
+        sys.exit()
 
 
 def get_option_directions(data_base, field):
     """Return the options of directions."""
-    result = set(data_base.execute(
-        "SELECT ARRIVE_IATA FROM data WHERE DEPART_IATA = '%(field)s'" % {
-            'field': field
-        }))
-    result = [el[0] for el in result]
-    return result
+    try:
+        result = set(data_base.execute(
+            "SELECT ARRIVE_IATA FROM data WHERE DEPART_IATA = '%(field)s'" % {
+                'field': field
+            }))
+        result = [el[0] for el in result]
+        return result
+    except sqlite3.OperationalError:
+        print('Something went wrong. '
+              'Further work with the '
+              'service is impossible.')
+        sys.exit()
 
 
-def request_date(question, days):
+
+def request_date(question, days, name_days):
     """Request a date from the user."""
     while True:
         date = input(question)
@@ -50,22 +63,31 @@ def request_date(question, days):
             day = str(datetime.datetime.strptime(date, '%d.%m.%Y').weekday())
             if day in days:
                 return date
-        print('You have entered incorrect data')
+            print(f'Enter the date corresponding to the days of the week:'
+                  f' {name_days[1:-1]}')
+        else:
+            print('You have entered incorrect data')
 
 
 def get_days_departure(data_base, depart, arrive):
     """Get possible days of departure."""
-    result = data_base.execute(
-        "SELECT FLIGHT_SCHEDULE FROM data WHERE DEPART_IATA = '%(depart)s' "
-        "AND ARRIVE_IATA = '%(arrive)s'" % {
-            'depart': depart,
-            'arrive': arrive
-        }).fetchall()[0][0]
-    days = [
-        pos for pos in [
-            str(day[0]) if day[1] == '+' else False for day in
-            enumerate(result)] if pos]
-    return days
+    try:
+        result = data_base.execute(
+            "SELECT FLIGHT_SCHEDULE FROM data WHERE DEPART_IATA = '%(depart)s' "
+            "AND ARRIVE_IATA = '%(arrive)s'" % {
+                'depart': depart,
+                'arrive': arrive
+            }).fetchall()[0][0]
+        days = [
+            pos for pos in [
+                str(day[0]) if day[1] == '+' else False for day in
+                enumerate(result)] if pos]
+        return days
+    except sqlite3.OperationalError:
+        print('Something went wrong. '
+              'Further work with the '
+              'service is impossible.')
+        sys.exit()
 
 
 def names_days_week(days):
@@ -235,12 +257,12 @@ def get_data(data_base, connect, session):
     print(f'Possible departure days: {name_days}')
     departure_date = request_date(
         f"Departure date?\r\n(in the format 01.01.2019)",
-        days)
+        days, name_days)
     arrival_date = input('Choose a return date? (y\\n)')
     if arrival_date.lower() == 'y':
         arrival_date = request_date(
             "Return date?\r\n(in the format 01.01.2019)",
-            days)
+            days, name_days)
     else:
         arrival_date = None
         print(
@@ -392,15 +414,21 @@ def get_data_site(session, data_base, connect):
 
 def connect_database():
     """Return the database cursor."""
-    connect = sqlite3.connect('c:/github/test_task.db')
-    data_base = connect.cursor()
-    data_base.execute("""CREATE TABLE IF NOT EXISTS data (
-    Route_ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    DEPART_IATA TEXT(3),
-    ARRIVE_IATA TEXT(3),
-    FLIGHT_SCHEDULE TEXT(7)
-    )""")
-    return data_base, connect
+    try:
+        connect = sqlite3.connect('c:/github/test_task.db')
+        data_base = connect.cursor()
+        data_base.execute("""CREATE TABLE IF NOT EXISTS data (
+        Route_ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        DEPART_IATA TEXT(3),
+        ARRIVE_IATA TEXT(3),
+        FLIGHT_SCHEDULE TEXT(7)
+        )""")
+        return data_base, connect
+    except sqlite3.OperationalError:
+        print('Something went wrong. '
+              'Further work with the '
+              'service is impossible.')
+        sys.exit()
 
 
 def main():
@@ -408,6 +436,7 @@ def main():
     data_base, connect = connect_database()
     session = requests.session()
     get_data(data_base, connect, session)
+    connect.close()
 
 
 if __name__ == '__main__':
