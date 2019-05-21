@@ -23,14 +23,14 @@ def request_city(cities, question):
     return city
 
 
-def get_option_departure():
+def get_option_departure(data_base):
     """Return the options of departure."""
     result = set(data_base.execute("SELECT DEPART_IATA FROM data"))
     result = [el[0] for el in result]
     return result
 
 
-def get_option_directions(field):
+def get_option_directions(data_base, field):
     """Return the options of directions."""
     result = set(data_base.execute(
         "SELECT ARRIVE_IATA FROM data WHERE DEPART_IATA = '%(field)s'" % {
@@ -44,7 +44,7 @@ def request_date(question, days):
     """Request a date from the user."""
     while True:
         date = input(question)
-        date = re.search('^\d\d.\d\d.\d{4}$', date)
+        date = re.search(r'^\d\d.\d\d.\d{4}$', date)
         if date:
             date = date.group(0)
             day = str(datetime.datetime.strptime(date, '%d.%m.%Y').weekday())
@@ -53,7 +53,7 @@ def request_date(question, days):
         print('You have entered incorrect data')
 
 
-def get_days_departure(depart, arrive):
+def get_days_departure(data_base, depart, arrive):
     """Get possible days of departure."""
     result = data_base.execute(
         "SELECT FLIGHT_SCHEDULE FROM data WHERE DEPART_IATA = '%(depart)s' "
@@ -61,8 +61,10 @@ def get_days_departure(depart, arrive):
             'depart': depart,
             'arrive': arrive
         }).fetchall()[0][0]
-    days = [pos for pos in [str(day[0]) if day[1] == '+' else False for day in
-                           enumerate(result)] if pos]
+    days = [
+        pos for pos in [
+            str(day[0]) if day[1] == '+' else False for day in
+            enumerate(result)] if pos]
     return days
 
 
@@ -217,45 +219,42 @@ def calculate_time(first_time, second_time, action):
     return result
 
 
-def main():
+def get_data(data_base, connect, session):
     """To return the options for possible flights."""
-    departure_cities = get_option_departure()
+    departure_cities = get_option_departure(data_base)
     if not departure_cities:
-        get_data_site()
-        departure_cities = get_option_departure()
+        get_data_site(session, data_base, connect)
+        departure_cities = get_option_departure(data_base)
     departure_city = request_city(departure_cities,
                                   'Where do you want to fly from?')
-    arrival_cities = get_option_directions(departure_city)
+    arrival_cities = get_option_directions(data_base, departure_city)
     arrival_city = request_city(
         arrival_cities, 'Where do you want to fly?')
-    days = get_days_departure(departure_city, arrival_city)
+    days = get_days_departure(data_base, departure_city, arrival_city)
     name_days = names_days_week(days)
     print(f'Possible departure days: {name_days}')
     departure_date = request_date(
         f"Departure date?\r\n(in the format 01.01.2019)",
-    days)
+        days)
     arrival_date = input('Choose a return date? (y\\n)')
     if arrival_date.lower() == 'y':
         arrival_date = request_date(
             "Return date?\r\n(in the format 01.01.2019)",
-        days)
+            days)
     else:
         arrival_date = None
-        print('The search will be made without taking into account the date of return.')
+        print(
+            'The search will be made without taking into account'
+            ' the date of return.')
     information = requested_information(session, departure_city, arrival_city,
                                         departure_date, arrival_date)
     combinations_list = parse_data(
-            information, departure_date, arrival_date)
+        information, departure_date, arrival_date)
     out_result(combinations_list)
-
-
-
-
 
 
 def get_option_departure_site(session):
     """Return the options of departure."""
-
     url = 'http://www.flybulgarien.dk/bg/'
     try:
         result = session.get(url).text
@@ -334,6 +333,7 @@ def list_dates(session, departure_city, arrival_city):
             '\r\nPlease try again later.')
         sys.exit()
 
+
 def format_date(dates):
     """Return the list of dates in the format 01.01.2009."""
     try:
@@ -354,28 +354,29 @@ def format_date(dates):
         sys.exit()
 
 
-def write_data_database(option_d, option_a, dates):
+def write_data_database(data_base, connect, option_d, option_a, dates):
     """Write data to the database."""
     data_base.execute("SELECT DEPART_IATA, ARRIVE_IATA, FLIGHT_SCHEDULE "
-                 "FROM data WHERE DEPART_IATA = '%(depart)s' AND ARRIVE_IATA "
-                 "= '%(arrive)s' AND FLIGHT_SCHEDULE = '%(flight)s'" % {
-                     'depart': option_d,
-                     'arrive': option_a,
-                     'flight': dates
-                 })
+                      "FROM data WHERE DEPART_IATA = '%(depart)s' AND"
+                      " ARRIVE_IATA = '%(arrive)s' AND FLIGHT_SCHEDULE ="
+                      " '%(flight)s'" %
+                      {'depart': option_d,
+                       'arrive': option_a,
+                       'flight': dates
+                       })
     if not data_base.fetchall():
         data_base.execute("INSERT INTO data (Route_ID, DEPART_IATA, "
-                     "ARRIVE_IATA, FLIGHT_SCHEDULE)"
-                     " VALUES (NULL, '%(depart)s', "
-                     "'%(arrive)s', '%(flight)s')" % {
-                         'depart': option_d,
-                         'arrive': option_a,
-                         'flight': dates
-                     })
+                          "ARRIVE_IATA, FLIGHT_SCHEDULE)"
+                          " VALUES (NULL, '%(depart)s', "
+                          "'%(arrive)s', '%(flight)s')" %
+                          {'depart': option_d,
+                           'arrive': option_a,
+                           'flight': dates
+                           })
         connect.commit()
 
 
-def get_data_site():
+def get_data_site(session, data_base, connect):
     """Get data from the site."""
     options_d = get_option_departure_site(session)
     for option_d in options_d:
@@ -385,7 +386,8 @@ def get_data_site():
                 dates = list_dates(session, option_d, option_a)
                 if len(dates) > 2:
                     dates = format_date(dates)
-                    write_data_database(option_d, option_a, dates)
+                    write_data_database(data_base, connect, option_d,
+                                        option_a, dates)
 
 
 def connect_database():
@@ -401,7 +403,12 @@ def connect_database():
     return data_base, connect
 
 
-if __name__ == '__main__':
+def main():
+    """Main function."""
     data_base, connect = connect_database()
     session = requests.session()
+    get_data(data_base, connect, session)
+
+
+if __name__ == '__main__':
     main()
