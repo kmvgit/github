@@ -72,8 +72,8 @@ def get_days_departure(data_base, depart, arrive):
     """Get possible days of departure."""
     try:
         result = data_base.execute(
-            "SELECT FLIGHT_SCHEDULE FROM data WHERE DEPART_IATA = '%(depart)s' "
-            "AND ARRIVE_IATA = '%(arrive)s'" % {
+            "SELECT FLIGHT_SCHEDULE FROM data WHERE DEPART_IATA ="
+            " '%(depart)s' AND ARRIVE_IATA = '%(arrive)s'" % {
                 'depart': depart,
                 'arrive': arrive
             }).fetchall()[0][0]
