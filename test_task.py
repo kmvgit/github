@@ -23,33 +23,25 @@ def request_city(cities, question):
     return city
 
 
-def get_option_departure(data_base):
+def get_option_departure(connect):
     """Return the options of departure."""
-    try:
-        result = set(data_base.execute("SELECT DEPART_IATA FROM data"))
+    with connect:
+        connect = connect.cursor()
+        result = set(connect.execute("SELECT DEPART_IATA FROM data"))
         result = [el[0] for el in result]
-        return result
-    except sqlite3.OperationalError:
-        print('Something went wrong. '
-              'Further work with the '
-              'service is impossible.')
-        sys.exit()
+    return result
 
 
-def get_option_directions(data_base, field):
+def get_option_directions(connect, field):
     """Return the options of directions."""
-    try:
-        result = set(data_base.execute(
+    with connect:
+        connect = connect.cursor()
+        result = set(connect.execute(
             "SELECT ARRIVE_IATA FROM data WHERE DEPART_IATA = '%(field)s'" % {
                 'field': field
             }))
-        result = [el[0] for el in result]
-        return result
-    except sqlite3.OperationalError:
-        print('Something went wrong. '
-              'Further work with the '
-              'service is impossible.')
-        sys.exit()
+    result = [el[0] for el in result]
+    return result
 
 
 def request_date(question, days, name_days):
@@ -68,25 +60,20 @@ def request_date(question, days, name_days):
             print('You have entered incorrect data')
 
 
-def get_days_departure(data_base, depart, arrive):
+def get_days_departure(connect, depart, arrive):
     """Get possible days of departure."""
-    try:
-        result = data_base.execute(
+    with connect:
+        connect = connect.cursor()
+        result = connect.execute(
             "SELECT FLIGHT_SCHEDULE FROM data WHERE DEPART_IATA ="
             " '%(depart)s' AND ARRIVE_IATA = '%(arrive)s'" % {
                 'depart': depart,
                 'arrive': arrive
             }).fetchall()[0][0]
-        days = [
-            pos for pos in [
-                str(day[0]) if day[1] == '+' else False for day in
-                enumerate(result)] if pos]
-        return days
-    except sqlite3.OperationalError:
-        print('Something went wrong. '
-              'Further work with the '
-              'service is impossible.')
-        sys.exit()
+    days = [pos for pos in [
+        str(day[0]) if day[1] == '+' else False for day in
+        enumerate(result)] if pos]
+    return days
 
 
 def names_days_week(days):
@@ -240,40 +227,6 @@ def calculate_time(first_time, second_time, action):
     return result
 
 
-def get_data(data_base, connect, session):
-    """To return the options for possible flights."""
-    departure_cities = get_option_departure(data_base)
-    if not departure_cities:
-        get_data_site(session, data_base, connect)
-        departure_cities = get_option_departure(data_base)
-    departure_city = request_city(departure_cities,
-                                  'Where do you want to fly from?')
-    arrival_cities = get_option_directions(data_base, departure_city)
-    arrival_city = request_city(
-        arrival_cities, 'Where do you want to fly?')
-    days = get_days_departure(data_base, departure_city, arrival_city)
-    name_days = names_days_week(days)
-    print(f'Possible departure days: {name_days}')
-    departure_date = request_date(
-        f"Departure date?\r\n(in the format 01.01.2019)",
-        days, name_days)
-    arrival_date = input('Choose a return date? (y\\n)')
-    if arrival_date.lower() == 'y':
-        arrival_date = request_date(
-            "Return date?\r\n(in the format 01.01.2019)",
-            days, name_days)
-    else:
-        arrival_date = None
-        print(
-            'The search will be made without taking into account'
-            ' the date of return.')
-    information = requested_information(session, departure_city, arrival_city,
-                                        departure_date, arrival_date)
-    combinations_list = parse_data(
-        information, departure_date, arrival_date)
-    out_result(combinations_list)
-
-
 def get_option_departure_site(session):
     """Return the options of departure."""
     url = 'http://www.flybulgarien.dk/bg/'
@@ -375,9 +328,11 @@ def format_date(dates):
         sys.exit()
 
 
-def write_data_database(data_base, connect, option_d, option_a, dates):
+def write_data_database(connect, option_d, option_a, dates):
     """Write data to the database."""
-    data_base.execute("SELECT DEPART_IATA, ARRIVE_IATA, FLIGHT_SCHEDULE "
+    with connect:
+        connect = connect.cursor()
+        connect.execute("SELECT DEPART_IATA, ARRIVE_IATA, FLIGHT_SCHEDULE "
                       "FROM data WHERE DEPART_IATA = '%(depart)s' AND"
                       " ARRIVE_IATA = '%(arrive)s' AND FLIGHT_SCHEDULE ="
                       " '%(flight)s'" %
@@ -385,8 +340,8 @@ def write_data_database(data_base, connect, option_d, option_a, dates):
                        'arrive': option_a,
                        'flight': dates
                        })
-    if not data_base.fetchall():
-        data_base.execute("INSERT INTO data (Route_ID, DEPART_IATA, "
+        if not connect.fetchall():
+            connect.execute("INSERT INTO data (Route_ID, DEPART_IATA, "
                           "ARRIVE_IATA, FLIGHT_SCHEDULE)"
                           " VALUES (NULL, '%(depart)s', "
                           "'%(arrive)s', '%(flight)s')" %
@@ -394,10 +349,9 @@ def write_data_database(data_base, connect, option_d, option_a, dates):
                            'arrive': option_a,
                            'flight': dates
                            })
-        connect.commit()
 
 
-def get_data_site(session, data_base, connect):
+def get_data_site(session, connect):
     """Get data from the site."""
     options_d = get_option_departure_site(session)
     for option_d in options_d:
@@ -407,36 +361,57 @@ def get_data_site(session, data_base, connect):
                 dates = list_dates(session, option_d, option_a)
                 if len(dates) > 2:
                     dates = format_date(dates)
-                    write_data_database(data_base, connect, option_d,
-                                        option_a, dates)
-
-
-def connect_database():
-    """Return the database cursor."""
-    try:
-        connect = sqlite3.connect('c:/github/test_task.db')
-        data_base = connect.cursor()
-        data_base.execute("""CREATE TABLE IF NOT EXISTS data (
-        Route_ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        DEPART_IATA TEXT(3),
-        ARRIVE_IATA TEXT(3),
-        FLIGHT_SCHEDULE TEXT(7)
-        )""")
-        return data_base, connect
-    except sqlite3.OperationalError:
-        print('Something went wrong. '
-              'Further work with the '
-              'service is impossible.')
-        sys.exit()
+                    write_data_database(connect, option_d, option_a, dates)
 
 
 def main():
     """Main function."""
-    data_base, connect = connect_database()
-    session = requests.session()
-    get_data(data_base, connect, session)
-    connect.close()
+    connect = sqlite3.connect('test_task.db')
+    session = requests.Session()
+    departure_cities = get_option_departure(connect)
+    if not departure_cities:
+        get_data_site(session, connect)
+        departure_cities = get_option_departure(connect)
+    departure_city = request_city(departure_cities,
+                                  'Where do you want to fly from?')
+    arrival_cities = get_option_directions(connect, departure_city)
+    arrival_city = request_city(
+        arrival_cities, 'Where do you want to fly?')
+    days = get_days_departure(connect, departure_city, arrival_city)
+    name_days = names_days_week(days)
+    print(f'Possible departure days: {name_days}')
+    departure_date = request_date(
+        f"Departure date?\r\n(in the format 01.01.2019)",
+        days, name_days)
+    arrival_date = input('Choose a return date? (y\\n)')
+    if arrival_date.lower() == 'y':
+        arrival_date = request_date(
+            "Return date?\r\n(in the format 01.01.2019)",
+            days, name_days)
+    else:
+        arrival_date = None
+        print(
+            'The search will be made without taking into account'
+            ' the date of return.')
+    information = requested_information(session, departure_city, arrival_city,
+                                        departure_date, arrival_date)
+    combinations_list = parse_data(
+        information, departure_date, arrival_date)
+    out_result(combinations_list)
+
+
+def create_database():
+    """Create a database."""
+    connect = sqlite3.connect('test_task.db')
+    with connect:
+        connect.execute("""CREATE TABLE IF NOT EXISTS data (
+            Route_ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            DEPART_IATA TEXT(3),
+            ARRIVE_IATA TEXT(3),
+            FLIGHT_SCHEDULE TEXT(7)
+            )""")
 
 
 if __name__ == '__main__':
+    create_database()
     main()
