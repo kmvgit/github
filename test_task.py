@@ -12,8 +12,8 @@ import requests
 from lxml import html
 
 
-def request_city(cities, question):
-    """To request a city from the user."""
+def get_user_city(cities, question):
+    """Return the city requested from the user."""
     while True:
         city = input(f'{question}\r\n('
                      f'{",".join(cities)})').upper()
@@ -44,8 +44,8 @@ def get_option_directions(connect, field):
     return result
 
 
-def request_date(question, days, name_days):
-    """Request a date from the user."""
+def get_user_date(question, days, name_days):
+    """Return the date requested from the user."""
     while True:
         date = input(question)
         date = re.search(r'^\d\d.\d\d.\d{4}$', date)
@@ -76,16 +76,16 @@ def get_days_departure(connect, depart, arrive):
     return days
 
 
-def names_days_week(days):
+def get_name_days_week(days):
     """Return the names of the days of the week."""
     days = [calendar.day_name[int(name)] for name in days]
     days = f"({', '.join(days)})"
     return days
 
 
-def requested_information(session, departure_city, arrival_city,
-                          departure_date, arrival_date):
-    """Get information from the server."""
+def get_information_site(session, departure_city, arrival_city,
+                         departure_date, arrival_date):
+    """Get information from the site."""
     url = 'https://apps.penguin.bg/fly/quote3.aspx'
     params = {
         f'{"ow" if arrival_date is None else "rt"}': '',
@@ -115,8 +115,8 @@ def requested_information(session, departure_city, arrival_city,
         sys.exit()
 
 
-def parse_data(xml, departure_date, arrival_date):
-    """Parse the data and return possible combinations of flights."""
+def get_data_dataset(xml, departure_date, arrival_date):
+    """Return data from the dataset."""
     try:
         page = html.document_fromstring(xml)
         departure_list_str1 = page.xpath(
@@ -129,10 +129,10 @@ def parse_data(xml, departure_date, arrival_date):
         arrival_list_str2 = page.xpath(
             './/tr[starts-with(@id, "flywiz_irprc")]')
         arrival_list_element = zip(arrival_list_str1, arrival_list_str2)
-        departure_actual = actual_data(departure_list_element, departure_date)
-        arrival_actual = actual_data(arrival_list_element, arrival_date)
-        combinations_list = combinations_flight(departure_actual,
-                                                arrival_actual)
+        departure_actual = filter_data(departure_list_element, departure_date)
+        arrival_actual = filter_data(arrival_list_element, arrival_date)
+        combinations_list = get_combination_flights(departure_actual,
+                                                    arrival_actual)
         return combinations_list
     except ValueError:
         print('Something went wrong. '
@@ -141,7 +141,7 @@ def parse_data(xml, departure_date, arrival_date):
         sys.exit()
 
 
-def combinations_flight(departure_actual, arrival_actual):
+def get_combination_flights(departure_actual, arrival_actual):
     """Return flight options according to the selected date."""
     if arrival_actual:
         combinations_list = list(itertools.product(
@@ -151,8 +151,8 @@ def combinations_flight(departure_actual, arrival_actual):
     return combinations_list
 
 
-def actual_data(date_list, date_actual):
-    """Return information according to the selected date."""
+def filter_data(date_list, date_actual):
+    """Return data corresponding to the current date."""
     actual_list = []
     for position in date_list:
         date = position[0].xpath('.//td[2]/text()')[0].split(' ')
@@ -172,8 +172,8 @@ def actual_data(date_list, date_actual):
     return actual_list
 
 
-def out_result(combinations_list):
-    """Display information to the user."""
+def output_result_user(combinations_list):
+    """Output the result to the user."""
     if not combinations_list:
         print('No data found for the specified parameters')
     try:
@@ -183,9 +183,9 @@ def out_result(combinations_list):
             print(f'date of departure: {option[0]["date"]}')
             print(f'time of departure: {option[0]["time_from"]}')
             print(f'boarding time: {option[0]["time_to"]}')
-            duration_times1 = calculate_time(option[0]["time_from"],
-                                             option[0]["time_to"],
-                                             'difference')
+            duration_times1 = get_calculate_time(option[0]["time_from"],
+                                                 option[0]["time_to"],
+                                                 'difference')
             print(f'duration of flight: {duration_times1}')
             print(f'price: {option[0]["price"]} {option[0]["currency"]}')
             if len(option) == 2:
@@ -193,9 +193,9 @@ def out_result(combinations_list):
                 print(f'date of departure: {option[1]["date"]}')
                 print(f'time of departure: {option[1]["time_from"]}')
                 print(f'boarding time: {option[1]["time_to"]}')
-                duration_times2 = calculate_time(option[1]["time_from"],
-                                                 option[1]["time_to"],
-                                                 'difference')
+                duration_times2 = get_calculate_time(option[1]["time_from"],
+                                                     option[1]["time_to"],
+                                                     'difference')
                 print(f'duration of flight: {duration_times2}')
                 print(f'price: {option[1]["price"]} {option[1]["currency"]}')
                 departure_price = float(option[0]["price"])
@@ -205,7 +205,7 @@ def out_result(combinations_list):
                     f'{"{:.2f}".format(departure_price + arrival_prace)} '
                     f'{option[1]["currency"]}')
                 print(f'total time of flight: '
-                      f'{calculate_time(duration_times1, duration_times2, "amount")}')
+                      f'{get_calculate_time(duration_times1, duration_times2, "amount")}')
             print('**********\n')
     except (TypeError, IndexError):
         print('Something went wrong. '
@@ -213,7 +213,7 @@ def out_result(combinations_list):
               'service is impossible.')
 
 
-def calculate_time(first_time, second_time, action):
+def get_calculate_time(first_time, second_time, action):
     """Return the difference or sum of two time intervals."""
     first_time = datetime.datetime.strptime(first_time, '%H:%M')
     second_time = datetime.datetime.strptime(second_time, '%H:%M')
@@ -274,8 +274,8 @@ def get_option_directions_site(session, departure_city):
         sys.exit()
 
 
-def list_dates(session, departure_city, arrival_city):
-    """Return date variants."""
+def get_option_date_site(session, departure_city, arrival_city):
+    """Return date options from the site."""
     url = 'http://www.flybulgarien.dk/script/getdates/2-departure'
     headers = {
         'Accept': '*/*',
@@ -308,7 +308,7 @@ def list_dates(session, departure_city, arrival_city):
         sys.exit()
 
 
-def format_date(dates):
+def change_date_format(dates):
     """Return the list of dates in the format 01.01.2009."""
     try:
         list_date = set(re.findall(r'\d+[,]?\d+[,]?\d+[.]?', dates))
@@ -333,22 +333,22 @@ def write_data_database(connect, option_d, option_a, dates):
     with connect:
         connect = connect.cursor()
         connect.execute("SELECT DEPART_IATA, ARRIVE_IATA, FLIGHT_SCHEDULE "
-                      "FROM data WHERE DEPART_IATA = '%(depart)s' AND"
-                      " ARRIVE_IATA = '%(arrive)s' AND FLIGHT_SCHEDULE ="
-                      " '%(flight)s'" %
-                      {'depart': option_d,
-                       'arrive': option_a,
-                       'flight': dates
-                       })
+                        "FROM data WHERE DEPART_IATA = '%(depart)s' AND"
+                        " ARRIVE_IATA = '%(arrive)s' AND FLIGHT_SCHEDULE ="
+                        " '%(flight)s'" %
+                        {'depart': option_d,
+                         'arrive': option_a,
+                         'flight': dates
+                         })
         if not connect.fetchall():
             connect.execute("INSERT INTO data (Route_ID, DEPART_IATA, "
-                          "ARRIVE_IATA, FLIGHT_SCHEDULE)"
-                          " VALUES (NULL, '%(depart)s', "
-                          "'%(arrive)s', '%(flight)s')" %
-                          {'depart': option_d,
-                           'arrive': option_a,
-                           'flight': dates
-                           })
+                            "ARRIVE_IATA, FLIGHT_SCHEDULE)"
+                            " VALUES (NULL, '%(depart)s', "
+                            "'%(arrive)s', '%(flight)s')" %
+                            {'depart': option_d,
+                             'arrive': option_a,
+                             'flight': dates
+                             })
 
 
 def get_data_site(session, connect):
@@ -358,34 +358,32 @@ def get_data_site(session, connect):
         options_a = get_option_directions_site(session, option_d)
         if options_a:
             for option_a in options_a:
-                dates = list_dates(session, option_d, option_a)
+                dates = get_option_date_site(session, option_d, option_a)
                 if len(dates) > 2:
-                    dates = format_date(dates)
+                    dates = change_date_format(dates)
                     write_data_database(connect, option_d, option_a, dates)
 
 
-def main():
-    """Main function."""
-    connect = sqlite3.connect('test_task.db')
-    session = requests.Session()
+def get_user_data(connect, session):
+    """Return data received from the user."""
     departure_cities = get_option_departure(connect)
     if not departure_cities:
         get_data_site(session, connect)
         departure_cities = get_option_departure(connect)
-    departure_city = request_city(departure_cities,
-                                  'Where do you want to fly from?')
+    departure_city = get_user_city(departure_cities,
+                                   'Where do you want to fly from?')
     arrival_cities = get_option_directions(connect, departure_city)
-    arrival_city = request_city(
+    arrival_city = get_user_city(
         arrival_cities, 'Where do you want to fly?')
     days = get_days_departure(connect, departure_city, arrival_city)
-    name_days = names_days_week(days)
+    name_days = get_name_days_week(days)
     print(f'Possible departure days: {name_days}')
-    departure_date = request_date(
+    departure_date = get_user_date(
         f"Departure date?\r\n(in the format 01.01.2019)",
         days, name_days)
     arrival_date = input('Choose a return date? (y\\n)')
     if arrival_date.lower() == 'y':
-        arrival_date = request_date(
+        arrival_date = get_user_date(
             "Return date?\r\n(in the format 01.01.2019)",
             days, name_days)
     else:
@@ -393,11 +391,20 @@ def main():
         print(
             'The search will be made without taking into account'
             ' the date of return.')
-    information = requested_information(session, departure_city, arrival_city,
-                                        departure_date, arrival_date)
-    combinations_list = parse_data(
+    return departure_city, arrival_city, departure_date, arrival_date
+
+
+def main():
+    """Main function."""
+    connect = sqlite3.connect('test_task.db')
+    session = requests.Session()
+    departure_city, arrival_city, departure_date, arrival_date = get_user_data(
+        connect, session)
+    information = get_information_site(session, departure_city, arrival_city,
+                                       departure_date, arrival_date)
+    combinations_list = get_data_dataset(
         information, departure_date, arrival_date)
-    out_result(combinations_list)
+    output_result_user(combinations_list)
 
 
 def create_database():
