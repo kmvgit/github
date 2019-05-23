@@ -332,7 +332,6 @@ def write_data_database(connect, option_d, option_a, dates):
     """Write data to the database."""
     with connect:
         connect = connect.cursor()
-        print(connect.rowcount)
         connect.execute("INSERT OR REPLACE INTO data (Route_ID, "
                         "DEPART_IATA, "
                         "ARRIVE_IATA, FLIGHT_SCHEDULE)"
