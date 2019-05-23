@@ -332,23 +332,15 @@ def write_data_database(connect, option_d, option_a, dates):
     """Write data to the database."""
     with connect:
         connect = connect.cursor()
-        connect.execute("SELECT DEPART_IATA, ARRIVE_IATA, FLIGHT_SCHEDULE "
-                        "FROM data WHERE DEPART_IATA = '%(depart)s' AND"
-                        " ARRIVE_IATA = '%(arrive)s' AND FLIGHT_SCHEDULE ="
-                        " '%(flight)s'" %
+        connect.execute("INSERT OR REPLACE INTO data (Route_ID, "
+                        "DEPART_IATA, "
+                        "ARRIVE_IATA, FLIGHT_SCHEDULE)"
+                        " VALUES (NULL, '%(depart)s', "
+                        "'%(arrive)s', '%(flight)s')" %
                         {'depart': option_d,
                          'arrive': option_a,
                          'flight': dates
-                         })
-        if not connect.fetchall():
-            connect.execute("INSERT INTO data (Route_ID, DEPART_IATA, "
-                            "ARRIVE_IATA, FLIGHT_SCHEDULE)"
-                            " VALUES (NULL, '%(depart)s', "
-                            "'%(arrive)s', '%(flight)s')" %
-                            {'depart': option_d,
-                             'arrive': option_a,
-                             'flight': dates
-                             })
+                        })
 
 
 def get_data_site(session, connect):
