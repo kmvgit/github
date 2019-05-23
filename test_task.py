@@ -46,16 +46,16 @@ def get_option_directions(connect, field):
 
 def get_user_date(question, days, name_days, dates=None):
     """Return the date requested from the user."""
+    if dates is not None:
+        dates = datetime.datetime.strptime(dates, '%d.%m.%Y')
     while True:
         date = input(question)
         date = re.search(r'^\d\d.\d\d.\d{4}$', date)
         if date:
             date = datetime.datetime.strptime(date.group(0), '%d.%m.%Y')
-            if dates is not None:
-                dates = datetime.datetime.strptime(dates, '%d.%m.%Y')
             today_date = datetime.datetime.today()
             day = str(date.weekday())
-            if date < today_date:
+            if date < today_date and dates is None:
                 print(f'Enter a date later than '
                       f'{today_date.date().strftime("%d.%m.%Y")}')
                 continue
@@ -407,13 +407,8 @@ def main():
         connect, session)
     information = get_information_site(session, departure_city, arrival_city,
                                        departure_date, arrival_date)
-    print(departure_city)
-    print(arrival_city)
-    print(departure_date)
-    print(arrival_date)
     combinations_list = get_data_dataset(
         information, departure_date, arrival_date)
-    print(combinations_list)
     output_result_user(combinations_list)
 
 
