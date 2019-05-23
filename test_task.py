@@ -44,20 +44,33 @@ def get_option_directions(connect, field):
     return result
 
 
-def get_user_date(question, days, name_days):
+def get_user_date(question, days, name_days, dates=None):
     """Return the date requested from the user."""
     while True:
         date = input(question)
         date = re.search(r'^\d\d.\d\d.\d{4}$', date)
         if date:
-            date = date.group(0)
-            day = str(datetime.datetime.strptime(date, '%d.%m.%Y').weekday())
-            if day in days:
-                return date
-            print(f'Enter the date corresponding to the days of the week:'
-                  f' {name_days[1:-1]}')
+            date = datetime.datetime.strptime(date.group(0), '%d.%m.%Y')
+            if dates is not None:
+                dates = datetime.datetime.strptime(dates, '%d.%m.%Y')
+            today_date = datetime.datetime.today()
+            day = str(date.weekday())
+            if date < today_date:
+                print(f'Enter a date later than '
+                      f'{today_date.date().strftime("%d.%m.%Y")}')
+                continue
+            elif dates is not None and date < dates:
+                print(f'Enter a date later than '
+                      f'{dates.date().strftime("%d.%m.%Y")}')
+                continue
+            elif day not in days:
+                print(f'Enter the date corresponding to the days of the week:'
+                      f' {name_days[1:-1]}')
+                continue
         else:
             print('You have entered incorrect data')
+            continue
+        return date.strftime("%d.%m.%Y")
 
 
 def get_days_departure(connect, depart, arrive):
@@ -137,7 +150,7 @@ def get_data_dataset(xml, departure_date, arrival_date):
     except ValueError:
         print('Something went wrong. '
               'Further work with the '
-              'service is impossible.')
+              'service is impossible. (1)')
         sys.exit()
 
 
@@ -210,7 +223,7 @@ def output_result_user(combinations_list):
     except (TypeError, IndexError):
         print('Something went wrong. '
               'Further work with the '
-              'service is impossible.')
+              'service is impossible. (2)')
 
 
 def get_calculate_time(first_time, second_time, action):
@@ -324,7 +337,7 @@ def change_date_format(dates):
     except TypeError:
         print('Something went wrong. '
               'Further work with the '
-              'service is impossible.')
+              'service is impossible. (3)')
         sys.exit()
 
 
@@ -340,7 +353,7 @@ def write_data_database(connect, option_d, option_a, dates):
                         {'depart': option_d,
                          'arrive': option_a,
                          'flight': dates
-                        })
+                         })
 
 
 def get_data_site(session, connect):
@@ -377,7 +390,7 @@ def get_user_data(connect, session):
     if arrival_date.lower() == 'y':
         arrival_date = get_user_date(
             "Return date?\r\n(in the format 01.01.2019)",
-            days, name_days)
+            days, name_days, departure_date)
     else:
         arrival_date = None
         print(
@@ -394,8 +407,13 @@ def main():
         connect, session)
     information = get_information_site(session, departure_city, arrival_city,
                                        departure_date, arrival_date)
+    print(departure_city)
+    print(arrival_city)
+    print(departure_date)
+    print(arrival_date)
     combinations_list = get_data_dataset(
         information, departure_date, arrival_date)
+    print(combinations_list)
     output_result_user(combinations_list)
 
 
