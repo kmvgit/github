@@ -59,11 +59,11 @@ def get_user_date(question, days, name_days, dates=None):
                 print(f'Enter a date later than '
                       f'{today_date.date().strftime("%d.%m.%Y")}')
                 continue
-            elif dates is not None and date < dates:
+            if dates is not None and date < dates:
                 print(f'Enter a date later than '
                       f'{dates.date().strftime("%d.%m.%Y")}')
                 continue
-            elif day not in days:
+            if day not in days:
                 print(f'Enter the date corresponding to the days of the week:'
                       f' {name_days[1:-1]}')
                 continue
