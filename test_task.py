@@ -48,12 +48,12 @@ def get_user_date(question, days, name_days, dates=None):
     """Return the date requested from the user."""
     if dates is not None:
         dates = datetime.datetime.strptime(dates, '%d.%m.%Y')
+    today_date = datetime.datetime.today()
     while True:
         date = input(question)
         date = re.search(r'^\d\d.\d\d.\d{4}$', date)
         if date:
             date = datetime.datetime.strptime(date.group(0), '%d.%m.%Y')
-            today_date = datetime.datetime.today()
             day = str(date.weekday())
             if date < today_date and dates is None:
                 print(f'Enter a date later than '
