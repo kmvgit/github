@@ -52,23 +52,22 @@ def get_user_date(question, days, name_days, dates=None):
     while True:
         date = input(question)
         date = re.search(r'^\d\d.\d\d.\d{4}$', date)
-        if date:
-            date = datetime.datetime.strptime(date.group(0), '%d.%m.%Y')
-            day = str(date.weekday())
-            if date < today_date and dates is None:
-                print(f'Enter a date later than '
-                      f'{today_date.date().strftime("%d.%m.%Y")}')
-                continue
-            if dates is not None and date < dates:
-                print(f'Enter a date later than '
-                      f'{dates.date().strftime("%d.%m.%Y")}')
-                continue
-            if day not in days:
-                print(f'Enter the date corresponding to the days of the week:'
-                      f' {name_days[1:-1]}')
-                continue
-        else:
+        if not date:
             print('You have entered incorrect data')
+            continue
+        date = datetime.datetime.strptime(date.group(0), '%d.%m.%Y')
+        day = str(date.weekday())
+        if dates is None and date < today_date:
+            print(f'Enter a date later than '
+                  f'{today_date.strftime("%d.%m.%Y")}')
+            continue
+        if dates is not None and date < dates:
+            print(f'Enter a date later than '
+                  f'{dates.strftime("%d.%m.%Y")}')
+            continue
+        if day not in days:
+            print(f'Enter the date corresponding to the days of the week:'
+                  f' {name_days[1:-1]}')
             continue
         return date.strftime("%d.%m.%Y")
 
