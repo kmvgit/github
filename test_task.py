@@ -44,32 +44,37 @@ def get_option_directions(connect, field):
     return result
 
 
-def get_user_date(question, days, name_days, dates=None):
-    """Return the date requested from the user."""
-    if dates is not None:
-        dates = datetime.datetime.strptime(dates, '%d.%m.%Y')
-    today_date = datetime.datetime.today()
+def get_user_date(question, number_days, name_days, date):
+    """Return the date requested from the user.
+
+    In the loop, the user is prompted for a date.
+    The entered value is compared with the required format,
+    time period and day of the week.
+    In the first if block, the format is checked.
+    The second if block checks if the date matches the period.
+    In the third if block, the date is checked against the day of the week.
+    If the entered value does not match one of the conditions,
+    the corresponding message is displayed and the date is requested again.
+
+    """
+    date = datetime.datetime.strptime(date, '%d.%m.%Y')
     while True:
-        date = input(question)
-        date = re.search(r'^\d\d.\d\d.\d{4}$', date)
-        if not date:
+        user_date = input(question)
+        user_date = re.search(r'^\d\d.\d\d.\d{4}$', user_date)
+        if not user_date:
             print('You have entered incorrect data')
             continue
-        date = datetime.datetime.strptime(date.group(0), '%d.%m.%Y')
-        day = str(date.weekday())
-        if dates is None and date < today_date:
+        user_date = datetime.datetime.strptime(user_date.group(0), '%d.%m.%Y')
+        if user_date < date:
             print(f'Enter a date later than '
-                  f'{today_date.strftime("%d.%m.%Y")}')
+                  f'{date.strftime("%d.%m.%Y")}')
             continue
-        if dates is not None and date < dates:
-            print(f'Enter a date later than '
-                  f'{dates.strftime("%d.%m.%Y")}')
-            continue
-        if day not in days:
+        number_day = str(user_date.weekday())
+        if number_day not in number_days:
             print(f'Enter the date corresponding to the days of the week:'
                   f' {name_days[1:-1]}')
             continue
-        return date.strftime("%d.%m.%Y")
+        return user_date.strftime("%d.%m.%Y")
 
 
 def get_days_departure(connect, depart, arrive):
@@ -186,8 +191,9 @@ def filter_data(date_list, date_actual):
 
 def output_result_user(combinations_list):
     """Output the result to the user."""
-    if not combinations_list:
+    if not combinations_list[0]:
         print('No data found for the specified parameters')
+        sys.exit()
     try:
         for option in combinations_list:
             print('**********')
@@ -379,17 +385,18 @@ def get_user_data(connect, session):
     arrival_cities = get_option_directions(connect, departure_city)
     arrival_city = get_user_city(
         arrival_cities, 'Where do you want to fly?')
-    days = get_days_departure(connect, departure_city, arrival_city)
-    name_days = get_name_days_week(days)
+    number_days = get_days_departure(connect, departure_city, arrival_city)
+    name_days = get_name_days_week(number_days)
     print(f'Possible departure days: {name_days}')
+    today_date = datetime.datetime.today().strftime("%d.%m.%Y")
     departure_date = get_user_date(
         f"Departure date?\r\n(in the format 01.01.2019)",
-        days, name_days)
+        number_days, name_days, today_date)
     arrival_date = input('Choose a return date? (y\\n)')
     if arrival_date.lower() == 'y':
         arrival_date = get_user_date(
             "Return date?\r\n(in the format 01.01.2019)",
-            days, name_days, departure_date)
+            number_days, name_days, departure_date)
     else:
         arrival_date = None
         print(
