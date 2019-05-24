@@ -44,20 +44,16 @@ def get_option_directions(connect, field):
     return result
 
 
-def get_user_date(question, number_days, name_days, date):
+def get_user_date(question, number_days, name_days, min_date):
     """Return the date requested from the user.
 
-    In the loop, the user is prompted for a date.
-    The entered value is compared with the required format,
-    time period and day of the week.
-    In the first if block, the format is checked.
-    The second if block checks if the date matches the period.
-    In the third if block, the date is checked against the day of the week.
-    If the entered value does not match one of the conditions,
-    the corresponding message is displayed and the date is requested again.
+    Get date from user.
+    Check date format.
+    Check whatever date was not less min_date.
+    Check that the date corresponds to the day of the week.
 
     """
-    date = datetime.datetime.strptime(date, '%d.%m.%Y')
+    min_date = datetime.datetime.strptime(min_date, '%d.%m.%Y')
     while True:
         user_date = input(question)
         user_date = re.search(r'^\d\d.\d\d.\d{4}$', user_date)
@@ -65,9 +61,9 @@ def get_user_date(question, number_days, name_days, date):
             print('You have entered incorrect data')
             continue
         user_date = datetime.datetime.strptime(user_date.group(0), '%d.%m.%Y')
-        if user_date < date:
+        if user_date < min_date:
             print(f'Enter a date later than '
-                  f'{date.strftime("%d.%m.%Y")}')
+                  f'{min_date.strftime("%d.%m.%Y")}')
             continue
         number_day = str(user_date.weekday())
         if number_day not in number_days:
@@ -160,11 +156,14 @@ def get_data_dataset(xml, departure_date, arrival_date):
 
 def get_combination_flights(departure_actual, arrival_actual):
     """Return flight options according to the selected date."""
-    if arrival_actual:
-        combinations_list = list(itertools.product(
-            departure_actual, arrival_actual))
-    elif not arrival_actual:
-        combinations_list = [departure_actual]
+    if not departure_actual and not arrival_actual:
+        combinations_list = []
+    elif not departure_actual or not arrival_actual:
+        combinations_list = [
+            arrival_actual if not departure_actual else departure_actual]
+    else:
+        combinations_list = itertools.product(
+            departure_actual, arrival_actual)
     return combinations_list
 
 
@@ -191,13 +190,15 @@ def filter_data(date_list, date_actual):
 
 def output_result_user(combinations_list):
     """Output the result to the user."""
-    if not combinations_list or not combinations_list[0]:
+    if not combinations_list:
         print('No data found for the specified parameters')
         sys.exit()
     try:
         for option in combinations_list:
             print('**********')
             print('Going Out')
+            print(f'departure city: {option[0]["city_from"]}')
+            print(f'arrival city: {option[0]["city_to"]}')
             print(f'date of departure: {option[0]["date"]}')
             print(f'time of departure: {option[0]["time_from"]}')
             print(f'boarding time: {option[0]["time_to"]}')
@@ -208,6 +209,8 @@ def output_result_user(combinations_list):
             print(f'price: {option[0]["price"]} {option[0]["currency"]}')
             if len(option) == 2:
                 print('\nComing Back')
+                print(f'departure city: {option[1]["city_from"]}')
+                print(f'arrival city: {option[1]["city_to"]}')
                 print(f'date of departure: {option[1]["date"]}')
                 print(f'time of departure: {option[1]["time_from"]}')
                 print(f'boarding time: {option[1]["time_to"]}')
