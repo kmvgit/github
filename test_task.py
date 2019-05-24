@@ -155,18 +155,11 @@ def get_data_dataset(xml, departure_date, arrival_date):
 
 
 def get_combination_flights(departure_actual, arrival_actual):
-    """Return flight options according to the selected date.
-
-    Return an empty list if there is no data.
-    Return a list with combinations in one direction.
-    Return a list with combinations in both directions.
-
-    """
-    if not departure_actual and not arrival_actual:
+    """Return flight options according to the selected date."""
+    if not departure_actual:
         combinations_list = []
-    elif not departure_actual or not arrival_actual:
-        combinations_list = [
-            arrival_actual if not departure_actual else departure_actual]
+    elif not arrival_actual:
+        combinations_list = [departure_actual]
     else:
         combinations_list = itertools.product(
             departure_actual, arrival_actual)
