@@ -191,7 +191,7 @@ def filter_data(date_list, date_actual):
 
 def output_result_user(combinations_list):
     """Output the result to the user."""
-    if not combinations_list[0]:
+    if not combinations_list or not combinations_list[0]:
         print('No data found for the specified parameters')
         sys.exit()
     try:
