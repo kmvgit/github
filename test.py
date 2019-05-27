@@ -6,5 +6,4 @@ os.environ['HTTPS_PROXY'] = 'https://localhost:8888'
 os.environ['CURL_CA_BUNDLE'] = ''
 
 s = requests.session()
-g = s.get('http://yandex.ru?ggg=ggg').text
-print(g)
+g = s.get('https://yandex.ru?ggg=ggg').text
